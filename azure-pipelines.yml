@@ -81,7 +81,7 @@ stages:
                 - task: AzureWebApp@1
                   displayName: '🚀 Deploy to Azure App Service'
                   inputs:
-                    azureSubscription: '$(azureSubscription)'
+                    azureSubscription: 'azure-connection'
                     appType: 'webAppLinux'
                     appName: '$(appServiceName)'
                     package: '$(System.ArtifactsDirectory)/drop/app.zip'
