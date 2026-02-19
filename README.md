@@ -120,6 +120,8 @@ Want to build this project? Follow the complete **click-by-click deployment guid
 
 📘 **[DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md)** — 9 phases, every Azure Portal click documented, with troubleshooting tips.
 
+🧹 **[CLEANUP.md](./CLEANUP.md)** — How to delete all Azure resources when you're done (avoid charges).
+
 ### Quick Start (Local Development)
 
 ```bash
