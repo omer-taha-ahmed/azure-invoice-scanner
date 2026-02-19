@@ -1,0 +1,89 @@
+# ============================================================
+# Azure DevOps CI/CD Pipeline
+# ============================================================
+# This pipeline automatically builds and deploys the Invoice
+# Scanner app to Azure App Service whenever you push to main.
+# ============================================================
+
+trigger:
+  branches:
+    include:
+      - main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  nodeVersion: '20.x'
+  # Set these in Azure DevOps Pipeline Variables (not here!)
+  # azureSubscription: 'your-service-connection-name'
+  # appServiceName: 'your-app-service-name'
+
+stages:
+  # ── Stage 1: Build ───────────────────────────────────────
+  - stage: Build
+    displayName: '🔨 Build & Test'
+    jobs:
+      - job: BuildJob
+        displayName: 'Install dependencies and prepare artifact'
+        steps:
+          # Step 1: Use Node.js
+          - task: NodeTool@0
+            displayName: '📦 Install Node.js $(nodeVersion)'
+            inputs:
+              versionSpec: '$(nodeVersion)'
+
+          # Step 2: Install dependencies
+          - script: npm install --production
+            displayName: '📥 Install npm dependencies'
+            workingDirectory: '$(Build.SourcesDirectory)'
+
+          # Step 3: Archive the app for deployment
+          - task: ArchiveFiles@2
+            displayName: '📦 Create deployment package'
+            inputs:
+              rootFolderOrFile: '$(Build.SourcesDirectory)'
+              includeRootFolder: false
+              archiveType: 'zip'
+              archiveFile: '$(Build.ArtifactStagingDirectory)/app.zip'
+              replaceExistingArchive: true
+
+          # Step 4: Publish the artifact
+          - task: PublishBuildArtifacts@1
+            displayName: '📤 Publish artifact'
+            inputs:
+              PathtoPublish: '$(Build.ArtifactStagingDirectory)/app.zip'
+              ArtifactName: 'drop'
+
+  # ── Stage 2: Deploy ──────────────────────────────────────
+  - stage: Deploy
+    displayName: '🚀 Deploy to Azure'
+    dependsOn: Build
+    condition: succeeded()
+    jobs:
+      - deployment: DeployJob
+        displayName: 'Deploy to App Service'
+        environment: 'production'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                # Step 1: Download the artifact
+                - task: DownloadBuildArtifacts@1
+                  displayName: '📥 Download artifact'
+                  inputs:
+                    buildType: 'current'
+                    downloadType: 'single'
+                    artifactName: 'drop'
+                    downloadPath: '$(System.ArtifactsDirectory)'
+
+                # Step 2: Deploy to Azure App Service
+                - task: AzureWebApp@1
+                  displayName: '🚀 Deploy to Azure App Service'
+                  inputs:
+                    azureSubscription: '$(azureSubscription)'
+                    appType: 'webAppLinux'
+                    appName: '$(appServiceName)'
+                    package: '$(System.ArtifactsDirectory)/drop/app.zip'
+                    runtimeStack: 'NODE|20-lts'
+                    startUpCommand: 'node server.js'

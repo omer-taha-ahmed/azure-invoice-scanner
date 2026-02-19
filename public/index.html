@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>InvoiceScan AI — Smart Invoice & Receipt Scanner</title>
+  <meta name="description" content="AI-powered invoice and receipt scanner. Upload any document and let Azure AI extract all the data automatically.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+
+  <!-- ── Sidebar Navigation ─────────────────────────────── -->
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="logo">
+        <span class="logo-icon">🧾</span>
+        <span class="logo-text">InvoiceScan<span class="logo-ai">AI</span></span>
+      </div>
+    </div>
+    <ul class="nav-links">
+      <li>
+        <a href="#" class="nav-link active" data-page="dashboard">
+          <span class="nav-icon">📊</span>
+          <span>Dashboard</span>
+        </a>
+      </li>
+      <li>
+        <a href="#" class="nav-link" data-page="scan">
+          <span class="nav-icon">📷</span>
+          <span>Scan Document</span>
+        </a>
+      </li>
+      <li>
+        <a href="#" class="nav-link" data-page="documents">
+          <span class="nav-icon">📁</span>
+          <span>Documents</span>
+        </a>
+      </li>
+    </ul>
+    <div class="sidebar-footer">
+      <div class="azure-badge">
+        <span>⚡</span> Powered by Azure AI
+      </div>
+    </div>
+  </nav>
+
+  <!-- ── Main Content ───────────────────────────────────── -->
+  <main class="main-content">
+    
+    <!-- Top Bar -->
+    <header class="top-bar">
+      <button class="menu-toggle" id="menuToggle">☰</button>
+      <h1 class="page-title" id="pageTitle">Dashboard</h1>
+      <div class="top-bar-actions">
+        <span class="status-badge" id="statusBadge">
+          <span class="status-dot"></span> Connected
+        </span>
+      </div>
+    </header>
+
+    <!-- ── Dashboard Page ──────────────────────────────── -->
+    <section class="page active" id="page-dashboard">
+      
+      <!-- Summary Cards -->
+      <div class="summary-cards">
+        <div class="card summary-card">
+          <div class="card-icon" style="background: linear-gradient(135deg, #667eea, #764ba2);">📄</div>
+          <div class="card-info">
+            <span class="card-label">Documents Scanned</span>
+            <span class="card-value" id="totalDocs">0</span>
+          </div>
+        </div>
+        <div class="card summary-card">
+          <div class="card-icon" style="background: linear-gradient(135deg, #f093fb, #f5576c);">💰</div>
+          <div class="card-info">
+            <span class="card-label">Total Spending</span>
+            <span class="card-value" id="totalSpending">$0.00</span>
+          </div>
+        </div>
+        <div class="card summary-card">
+          <div class="card-icon" style="background: linear-gradient(135deg, #4facfe, #00f2fe);">📅</div>
+          <div class="card-info">
+            <span class="card-label">This Month</span>
+            <span class="card-value" id="monthSpending">$0.00</span>
+          </div>
+        </div>
+        <div class="card summary-card">
+          <div class="card-icon" style="background: linear-gradient(135deg, #43e97b, #38f9d7);">🎯</div>
+          <div class="card-info">
+            <span class="card-label">AI Confidence</span>
+            <span class="card-value" id="avgConfidence">0%</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Charts Row -->
+      <div class="charts-row">
+        <div class="card chart-card">
+          <h3 class="card-title">Spending by Category</h3>
+          <div class="chart-container">
+            <canvas id="categoryChart"></canvas>
+          </div>
+        </div>
+        <div class="card chart-card">
+          <h3 class="card-title">Monthly Trend</h3>
+          <div class="chart-container">
+            <canvas id="monthlyChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent Activity & Top Vendors -->
+      <div class="charts-row">
+        <div class="card">
+          <h3 class="card-title">Recent Scans</h3>
+          <div class="recent-list" id="recentList">
+            <div class="empty-state-sm">No documents scanned yet</div>
+          </div>
+        </div>
+        <div class="card">
+          <h3 class="card-title">Top Vendors</h3>
+          <div class="vendor-list" id="vendorList">
+            <div class="empty-state-sm">No vendor data yet</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Scan Page ───────────────────────────────────── -->
+    <section class="page" id="page-scan">
+      
+      <div class="scan-container">
+        <div class="card scan-card">
+          <h2 class="scan-title">📷 Scan a Document</h2>
+          <p class="scan-subtitle">Upload an invoice or receipt — AI will extract all the data automatically</p>
+          
+          <!-- Upload Zone -->
+          <div class="upload-zone" id="uploadZone">
+            <div class="upload-icon">📄</div>
+            <p class="upload-text">Drag & drop your invoice/receipt here</p>
+            <p class="upload-hint">or click to browse • JPEG, PNG, PDF, TIFF • Max 4 MB</p>
+            <input type="file" id="fileInput" accept=".jpg,.jpeg,.png,.bmp,.tiff,.tif,.pdf" hidden>
+          </div>
+
+          <!-- Document Type Selection -->
+          <div class="doc-type-selector" id="docTypeSelector" style="display:none;">
+            <p class="doc-type-label">What type of document is this?</p>
+            <div class="doc-type-buttons">
+              <button class="doc-type-btn active" data-type="invoice">
+                <span>📄</span> Invoice
+              </button>
+              <button class="doc-type-btn" data-type="receipt">
+                <span>🧾</span> Receipt
+              </button>
+            </div>
+          </div>
+
+          <!-- Selected File Preview -->
+          <div class="file-preview" id="filePreview" style="display:none;">
+            <div class="file-info">
+              <span class="file-icon">📎</span>
+              <div>
+                <span class="file-name" id="fileName"></span>
+                <span class="file-size" id="fileSize"></span>
+              </div>
+            </div>
+            <button class="btn btn-remove" id="removeFile">✕</button>
+          </div>
+
+          <!-- Analyze Button -->
+          <button class="btn btn-primary btn-analyze" id="analyzeBtn" style="display:none;">
+            <span class="btn-icon">🔍</span> Analyze with AI
+          </button>
+
+          <!-- Progress -->
+          <div class="progress-container" id="progressContainer" style="display:none;">
+            <div class="progress-bar">
+              <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <p class="progress-text" id="progressText">Uploading document...</p>
+          </div>
+        </div>
+
+        <!-- Results Panel -->
+        <div class="card results-card" id="resultsCard" style="display:none;">
+          <h3 class="results-title">✅ Extraction Results</h3>
+          
+          <div class="result-grid">
+            <div class="result-item">
+              <span class="result-label">Vendor</span>
+              <span class="result-value" id="resultVendor">-</span>
+            </div>
+            <div class="result-item">
+              <span class="result-label">Date</span>
+              <span class="result-value" id="resultDate">-</span>
+            </div>
+            <div class="result-item">
+              <span class="result-label">Total</span>
+              <span class="result-value result-total" id="resultTotal">-</span>
+            </div>
+            <div class="result-item">
+              <span class="result-label">Tax</span>
+              <span class="result-value" id="resultTax">-</span>
+            </div>
+            <div class="result-item">
+              <span class="result-label">Confidence</span>
+              <span class="result-value" id="resultConfidence">-</span>
+            </div>
+            <div class="result-item">
+              <span class="result-label">Currency</span>
+              <span class="result-value" id="resultCurrency">-</span>
+            </div>
+          </div>
+
+          <!-- Line Items -->
+          <div class="line-items-section" id="lineItemsSection" style="display:none;">
+            <h4 class="section-label">Line Items</h4>
+            <table class="items-table">
+              <thead>
+                <tr>
+                  <th>Description</th>
+                  <th>Qty</th>
+                  <th>Unit Price</th>
+                  <th>Amount</th>
+                </tr>
+              </thead>
+              <tbody id="lineItemsBody"></tbody>
+            </table>
+          </div>
+
+          <!-- Category Assignment -->
+          <div class="category-assign">
+            <label class="section-label">Assign Category</label>
+            <select class="select-input" id="categorySelect">
+              <option value="">Select category...</option>
+            </select>
+            <button class="btn btn-secondary" id="saveCategoryBtn">Save Category</button>
+          </div>
+
+          <button class="btn btn-primary" id="scanAnotherBtn" style="margin-top: 1rem;">
+            📷 Scan Another Document
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Documents Page ──────────────────────────────── -->
+    <section class="page" id="page-documents">
+      
+      <!-- Filters -->
+      <div class="filters-bar">
+        <div class="filter-group">
+          <input type="text" class="filter-input" id="searchInput" placeholder="🔍 Search vendor or file name...">
+        </div>
+        <div class="filter-group">
+          <select class="filter-select" id="filterCategory">
+            <option value="">All Categories</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <input type="date" class="filter-input" id="filterStartDate" placeholder="Start date">
+          <input type="date" class="filter-input" id="filterEndDate" placeholder="End date">
+        </div>
+        <button class="btn btn-secondary" id="applyFilters">Apply</button>
+      </div>
+
+      <!-- Documents Table -->
+      <div class="card">
+        <div class="documents-table-wrapper">
+          <table class="documents-table" id="documentsTable">
+            <thead>
+              <tr>
+                <th>Vendor</th>
+                <th>Date</th>
+                <th>Total</th>
+                <th>Category</th>
+                <th>Items</th>
+                <th>Confidence</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="documentsBody">
+              <tr>
+                <td colspan="7" class="empty-state">No documents found. Start scanning!</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Document Detail Modal -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal" id="documentModal">
+      <div class="modal-header">
+        <h3 class="modal-title" id="modalTitle">Document Details</h3>
+        <button class="btn btn-remove" id="closeModal">✕</button>
+      </div>
+      <div class="modal-body" id="modalBody"></div>
+    </div>
+  </div>
+
+  <!-- Toast Notifications -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/app.js"></script>
+</body>
+</html>
