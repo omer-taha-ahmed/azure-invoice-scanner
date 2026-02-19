@@ -1,140 +1,167 @@
-# 🧾 InvoiceScan AI — Smart Invoice & Receipt Scanner
+# 🧾 InvoiceScan AI — Azure AI Invoice & Receipt Scanner
 
-> **AI-powered invoice and receipt scanner** built with Azure Free Tier.  
-> Upload any document → Azure AI extracts all data → stores in SQL Database → beautiful analytics dashboard.
+> A full-stack web application that uses **Azure AI Document Intelligence** to scan invoices/receipts, extract structured data, store it in **Azure SQL Database**, and deploy it with a **CI/CD pipeline** — all on Azure's **Free Tier ($0/month)**.
 
-![Live](https://img.shields.io/badge/Status-Live-brightgreen) ![Azure](https://img.shields.io/badge/Azure-Free%20Tier-blue) ![Node](https://img.shields.io/badge/Node.js-20%20LTS-green)
+![Azure](https://img.shields.io/badge/Cloud-Microsoft%20Azure-blue) ![Node](https://img.shields.io/badge/Runtime-Node.js%2020-green) ![AI](https://img.shields.io/badge/AI-Document%20Intelligence-purple) ![CI/CD](https://img.shields.io/badge/CI%2FCD-Azure%20DevOps-orange)
 
-## 🚀 Live Demo
+---
 
-**https://invoice-scanner-oa-fdd0fqerdtevfwhc.centralus-01.azurewebsites.net**
+## 🎯 What This Project Demonstrates
 
-> First load takes ~20 seconds (F1 free tier cold start).
+This project was built to showcase real-world Azure skills using **5 different Azure services** in a production-like architecture:
 
-## 📋 What It Does
+| Skill Area | What's Demonstrated |
+|-----------|-------------------|
+| **AI Services** | Azure AI Document Intelligence — prebuilt model integration, document parsing |
+| **Relational Database** | Azure SQL Database — schema design, connection pooling, parameterized queries |
+| **Web Hosting** | Azure App Service — full-stack deployment, environment config, Managed Identity |
+| **Security** | Azure Key Vault — secrets management, RBAC access control |
+| **CI/CD** | Azure DevOps — YAML pipelines, automated build & deploy, Git integration |
 
-1. **Upload** an invoice or receipt (JPEG, PNG, PDF, TIFF)
-2. **AI analyzes** the document using Azure AI Document Intelligence
-3. **Extracts** vendor name, date, total, tax, line items, and more
-4. **Stores** everything in Azure SQL Database
-5. **Dashboard** shows spending by category, monthly trends, top vendors
+---
 
 ## 🏗️ Architecture
 
 ```
-User → Azure App Service (F1 Free)
-         │ serves frontend + API
-         │
-    ┌────┴─────────────┐
-    ▼                  ▼
-AI Document         Azure SQL Database
-Intelligence        (Always Free)
-(Free F0)           ├── documents table
-500 pages/month     ├── line_items table
-                    └── categories table
+┌─────────────────────────────────────────────────────┐
+│                    User Browser                      │
+│         Dark-mode SPA (Dashboard, Scan, Docs)        │
+└─────────────────────┬───────────────────────────────┘
+                      │ HTTPS
+                      ▼
+┌─────────────────────────────────────────────────────┐
+│              Azure App Service (F1 Free)             │
+│         Node.js 20 / Express.js API Server           │
+│                                                      │
+│  ┌──────────┐  ┌───────────┐  ┌──────────────────┐  │
+│  │ /analyze │  │ /documents│  │   /dashboard     │  │
+│  │ AI scan  │  │ CRUD ops  │  │   Analytics      │  │
+│  └────┬─────┘  └─────┬─────┘  └────────┬─────────┘  │
+└───────┼──────────────┼─────────────────┼────────────┘
+        │              │                 │
+        ▼              ▼                 │
+┌──────────────┐ ┌──────────────────┐    │
+│ Azure AI     │ │ Azure SQL        │◄───┘
+│ Document     │ │ Database         │
+│ Intelligence │ │ (Always Free)    │
+│ (F0 Free)    │ │                  │
+│              │ │ ├── documents    │
+│ 500 pages/mo │ │ ├── line_items   │
+└──────────────┘ │ └── categories   │
+                 └──────────────────┘
 
-Secrets stored in → Azure Key Vault
-Code stored in   → GitHub + Azure DevOps
+        Secrets → Azure Key Vault
+        Code    → GitHub + Azure DevOps CI/CD
 ```
 
-## 🛠️ Azure Services Used (All Free)
+---
 
-| Service | Tier | Free Limit |
-|---------|------|-----------|
-| **Azure App Service** | F1 Free | Shared CPU, 1 GB storage |
-| **Azure SQL Database** | Always Free | 100K vCore-sec/month, 32 GB |
-| **Azure AI Document Intelligence** | F0 Free | 500 pages/month |
-| **Azure Key Vault** | Standard | ~$0 at this scale |
-| **Azure DevOps** | Free | 5 users, unlimited repos |
+## ✨ Key Features
+
+- **AI-Powered Extraction** — Upload JPEG, PNG, PDF, or TIFF → AI extracts vendor, date, total, tax, line items
+- **Prebuilt Models** — Uses Azure's `prebuilt-invoice` and `prebuilt-receipt` models (no custom training needed)
+- **SQL Database** — Relational schema with 3 tables, indexed queries, foreign key relationships
+- **Analytics Dashboard** — Chart.js charts: spending by category, monthly trends, top vendors
+- **Document Management** — Search, filter by category/date, view details, delete
+- **Category System** — 10 built-in categories with icons
+- **Premium Dark UI** — Glassmorphism design, smooth animations, fully responsive
+- **Secure Configuration** — Environment variables + Key Vault references for secrets
+- **CI/CD Pipeline** — Push to Git → auto-build → auto-deploy to Azure
+
+---
 
 ## 📁 Project Structure
 
 ```
 azure-invoice-scanner/
-├── server.js               # Express entry point
-├── package.json            # Dependencies
-├── azure-pipelines.yml     # CI/CD pipeline
-├── web.config              # IIS config (Windows hosting)
-├── .env.example            # Environment template
+├── server.js                 # Express.js entry point — middleware, routes, static serving
+├── package.json              # Dependencies: Azure SDKs, Express, mssql, multer
+├── azure-pipelines.yml       # 2-stage CI/CD: Build (Node 20, npm, zip) → Deploy (App Service)
+├── web.config                # IIS configuration for Windows App Service hosting
+├── .env.example              # Environment variable template (7 required variables)
 ├── .gitignore
+│
 ├── db/
-│   ├── connection.js       # SQL Database connection pool
-│   └── schema.sql          # Table creation scripts
+│   ├── connection.js         # SQL connection pool with auto-reconnect & schema initializer
+│   └── schema.sql            # CREATE TABLE scripts: categories, documents, line_items
+│
 ├── routes/
-│   ├── analyze.js          # AI Document Intelligence integration
-│   ├── documents.js        # CRUD for documents
-│   └── dashboard.js        # Analytics & statistics
+│   ├── analyze.js            # POST /api/analyze/invoice & /receipt — AI extraction + DB save
+│   ├── documents.js          # GET/PUT/DELETE /api/documents — CRUD with filtering & search
+│   └── dashboard.js          # GET /api/dashboard/* — summary, trends, vendors, categories
+│
 └── public/
-    ├── index.html          # Frontend SPA (3 pages)
-    ├── css/styles.css      # Premium dark-mode design
+    ├── index.html            # Single-page app: 3 views (Dashboard, Scan, Documents)
+    ├── css/styles.css        # 700+ lines: dark mode, glassmorphism, responsive, animations
     └── js/
-        ├── app.js          # Frontend controller + Chart.js
-        └── api.js          # API client module
+        ├── app.js            # SPA controller: navigation, Chart.js, drag-drop, toasts
+        └── api.js            # Fetch-based API client for all backend endpoints
 ```
 
-## 🔧 Local Development
+---
+
+## 🛠️ Azure Services & Free Tier Limits
+
+| Service | Tier | Free Allowance | Purpose |
+|---------|------|---------------|---------|
+| **App Service** | F1 Free | Shared CPU, 1 GB, 60 min/day | Hosts the full-stack app |
+| **SQL Database** | Always Free | 100K vCore-sec/mo, 32 GB | Stores extracted invoice data |
+| **AI Document Intelligence** | F0 Free | 500 pages/month | Reads & extracts document data |
+| **Key Vault** | Standard | ~$0 at low scale | Stores database & API secrets |
+| **DevOps** | Free | 5 users, unlimited repos | Git repos + CI/CD pipelines |
+
+> **Total monthly cost: $0.00** — All services operate within Azure Free Tier.
+
+---
+
+## 🚀 Deploy It Yourself
+
+Want to build this project? Follow the complete **click-by-click deployment guide**:
+
+📘 **[DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md)** — 9 phases, every Azure Portal click documented, with troubleshooting tips.
+
+### Quick Start (Local Development)
 
 ```bash
-# Clone the repo
+# Clone
 git clone https://github.com/omer-taha-ahmed/azure-invoice-scanner.git
 cd azure-invoice-scanner
 
-# Copy environment template and fill in your Azure credentials
+# Configure
 cp .env.example .env
+# Fill in your Azure credentials in .env
 
-# Install dependencies
+# Install & run
 npm install
-
-# Start the server
 npm start
 # → Open http://localhost:8080
 ```
 
-## 🚀 Deployment to Azure
-
-### Quick Deployment (Local Git)
-
-1. Create all Azure resources (App Service, SQL Database, AI Document Intelligence, Key Vault)
-2. Configure App Service environment variables
-3. Enable Local Git deployment in App Service Deployment Center
-4. Push code:
-```bash
-git remote add azure <your-local-git-clone-uri>
-git push azure master
-```
-
-### CI/CD Pipeline (Azure DevOps)
-
-The project includes `azure-pipelines.yml` for automated deployments:
-- **Build stage**: Install Node.js 20, npm dependencies, create zip artifact
-- **Deploy stage**: Deploy to Azure App Service
-
-> **Note**: New Azure DevOps organizations need to request free parallelism at the organization settings.
-
-## 🔑 Environment Variables
+### Required Environment Variables
 
 | Variable | Description |
 |----------|------------|
 | `SQL_SERVER` | Azure SQL Server hostname |
-| `SQL_DATABASE` | Database name |
+| `SQL_DATABASE` | Database name (e.g., `InvoiceScannerDB`) |
 | `SQL_USER` | SQL admin username |
 | `SQL_PASSWORD` | SQL admin password |
 | `DOC_INTELLIGENCE_ENDPOINT` | AI Document Intelligence endpoint URL |
 | `DOC_INTELLIGENCE_KEY` | AI Document Intelligence API key |
 | `NODE_ENV` | `production` for Azure, `development` for local |
 
-## 📊 Features
+---
 
-- **AI-Powered Scanning** — Prebuilt invoice & receipt models extract structured data
-- **Real-Time Dashboard** — Chart.js doughnut & bar charts for spending analysis
-- **Document Management** — Search, filter by category/date, view details
-- **Category System** — 10 built-in categories with custom icons
-- **Dark Mode UI** — Premium glassmorphism design
-- **Responsive** — Works on mobile and desktop
+## 💡 What I Learned Building This
 
-## 💰 Cost
+- **Azure AI Document Intelligence** returns structured JSON with confidence scores — far more powerful than basic OCR
+- **Azure SQL Database Always Free tier** auto-pauses when idle, which saves vCore-seconds but means cold starts
+- **App Service F1 tier** sleeps when idle — first request takes ~20-30 seconds (cold start)
+- **Key Vault with RBAC** requires explicit role assignment (Key Vault Administrator) before you can manage secrets
+- **Azure DevOps free tier** requires requesting parallelism grant for new organizations
+- **Managed Identity** lets App Service access Key Vault without storing credentials — zero secrets in code
+- **Local Git deployment** is the fastest way to deploy during development before CI/CD is configured
 
-**$0.00/month** — Everything runs within Azure Free Tier limits.
+---
 
 ## 📄 License
 
